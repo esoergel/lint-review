@@ -6,12 +6,17 @@ from lintreview.utils import in_path
 
 log = logging.getLogger(__name__)
 
+ARGS = 'args'
+BOOL = 'bool'
+
 
 class Pylint(Tool):
 
     name = 'pylint'
 
-    pylint_options = []
+    PYLINT_OPTIONS = {
+        'disable': ARGS,
+    }
 
     def check_dependencies(self):
         """
@@ -45,5 +50,16 @@ class Pylint(Tool):
         """
         msg_template = '{path}:{line}: {msg_id} {msg}'
         command = ['pylint', '--reports=n', '--msg-template', msg_template]
+        for option, value in self.options.items():
+            if option in self.PYLINT_OPTIONS:
+                if self.PYLINT_OPTIONS[option] is ARGS:
+                    command.extend(['--%s' % option, value])
+                else:
+                    assert self.PYLINT_OPTIONS[option] is BOOL
+                    if value:
+                        command.append('--%s' % option)
+            else:
+                log.warning('Set non-existent pylint option: %s', option)
         command.extend(files)
+        print command
         return command
